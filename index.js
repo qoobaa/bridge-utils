@@ -35,12 +35,28 @@ var getCurrentPhase = function (state) {
     }
 };
 
-var getContract = function (state) {
+var getContract = function (state, skipModifier) {
     var contracts = state.bids.filter(isContract),
         lastContract = contracts[contracts.length - 1],
-        modifiers = state.bids.slice(state.bids.indexOf(lastContract) + 1).filter(isModifier);
+        modifiers = state.bids.slice(state.bids.indexOf(lastContract) + 1).filter(isModifier),
+        modifier = modifiers[modifiers.length - 1];
 
-    return lastContract + (modifiers[modifiers.length - 1] || "");
+    return (modifier && !skipModifier) ? lastContract + modifier : lastContract;
+};
+
+var getDeclarer = function (state) {
+    var contract = getContract(state, true);
+
+    if (contract) {
+        var side = state.bids.indexOf(contract) % 2,
+            firstContract = state.bids.filter(function (bid, i) {
+                return bid[1] === contract[1] && i % 2 === side;
+            })[0];
+
+        return DIRECTIONS[(state.bids.indexOf(firstContract) + DIRECTIONS.indexOf(state.dealer)) % 4];
+    } else {
+        return undefined;
+    }
 };
 
 // private
@@ -61,6 +77,8 @@ var isContract = function (bid) {
     return CONTRACTS.indexOf(bid) !== -1;
 };
 
+var DIRECTIONS = ["N", "E", "S", "W"];
+
 // var compareContracts = function (a, b) {
 //     return CONTRACTS.indexOf(a) - CONTRACTS.indexOf(b);
 // };
@@ -71,5 +89,6 @@ var isModifier = function (bid) {
 
 module.exports = {
     getContract: getContract,
-    getCurrentPhase: getCurrentPhase
+    getCurrentPhase: getCurrentPhase,
+    getDeclarer: getDeclarer
 };
