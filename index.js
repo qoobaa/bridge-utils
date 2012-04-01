@@ -1,3 +1,5 @@
+// GAME STATE FORMAT
+//
 // state = {
 //     deal: {
 //         n: ["HA", "..."],
@@ -55,9 +57,9 @@ var getCurrentDirection = function (state) {
         var currentTrickNumber = Math.floor(state.cards.length / 4),
             previousTrickWinner = getTrickWinner(state, currentTrickNumber - 1);
 
-        return DIRECTIONS[(state.cards.length % 4 + DIRECTIONS.indexOf(previousTrickWinner)) % 4];
+        return incrementDirection(previousTrickWinner, state.cards.length);
     case "auction":
-        return DIRECTIONS[(state.bids.length + DIRECTIONS.indexOf(state.dealer)) % 4];
+        return incrementDirection(state.dealer, state.bids.length);
     default:
         return undefined;
     }
@@ -79,7 +81,7 @@ var getTrickWinner = function (state, number) {
         var card = trumps[trumps.length - 1] || cards[cards.length - 1],
             previousWinner = getTrickWinner(state, number - 1);
 
-        return card && DIRECTIONS[(DIRECTIONS.indexOf(previousWinner) + trick.indexOf(card)) % 4];
+        return card && incrementDirection(previousWinner, trick.indexOf(card));
     } else {
         return getFirstLead(state);
     }
@@ -95,25 +97,25 @@ var getCurrentPhase = function (state) {
     }
 };
 
-var getContract = function (state, skipModifier) {
+var getContract = function (state) {
     var contracts = state.bids.filter(isContract),
         lastContract = contracts[contracts.length - 1],
         modifiers = state.bids.slice(state.bids.indexOf(lastContract) + 1).filter(isModifier),
         modifier = modifiers[modifiers.length - 1];
 
-    return (modifier && !skipModifier) ? lastContract + modifier : lastContract;
+    return modifier ? lastContract + modifier : lastContract;
 };
 
 var getDeclarer = function (state) {
-    var contract = getContract(state, true);
+    var contract = getContract(state);
 
     if (contract) {
-        var side = state.bids.indexOf(contract) % 2,
+        var side = state.bids.indexOf(contract.replace(/X/g, "")) % 2,
             first = state.bids.filter(function (bid, i) {
                 return bid[1] === contract[1] && i % 2 === side;
             })[0];
 
-        return DIRECTIONS[(state.bids.indexOf(first) + DIRECTIONS.indexOf(state.dealer)) % 4];
+        return incrementDirection(state.dealer, state.bids.indexOf(first));
     } else {
         return undefined;
     }
@@ -122,15 +124,33 @@ var getDeclarer = function (state) {
 var getDummy = function (state) {
     var declarer = getDeclarer(state);
 
-    return DIRECTIONS[(DIRECTIONS.indexOf(declarer) + 2) % 4];
+    return incrementDirection(declarer, 2);
+};
+
+var getCurrentHand = function (state, direction) {
+    // TODO: sort by colour (take a trump argument)
+    return state.deal[direction.toLowerCase()].filter(function (card) {
+        return state.cards.indexOf(card) === -1;
+    });
+};
+
+var getCurrentPlayer = function (state) {
+    var direction = getCurrentDirection(state),
+        dummy = getDummy(state);
+
+    return direction === dummy ? incrementDirection(direction, 2) : direction;
 };
 
 // private
 
+var incrementDirection = function (direction, number) {
+    return DIRECTIONS[(DIRECTIONS.indexOf(direction) + number) % 4];
+};
+
 var getFirstLead = function (state) {
     var declarer = getDeclarer(state);
 
-    return DIRECTIONS[(DIRECTIONS.indexOf(declarer) + 1) % 4];
+    return incrementDirection(declarer, 1);
 };
 
 var isPass = function (bid) {
@@ -172,5 +192,7 @@ module.exports = {
     isCardAllowed: isCardAllowed,
     getCurrentDirection: getCurrentDirection,
     getTrickWinner: getTrickWinner,
-    getDummy: getDummy
+    getDummy: getDummy,
+    getCurrentHand: getCurrentHand,
+    getCurrentPlayer: getCurrentPlayer
 };

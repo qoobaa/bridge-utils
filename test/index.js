@@ -627,3 +627,65 @@ describe("getDummy", function () {
     });
 
 });
+
+describe("getCurrentHand", function () {
+
+    it("returns hand when no cards played", function () {
+        var state = {
+            dealer: "W",
+            deal: {
+                n: ["H5"]
+            },
+            cards: []
+        };
+
+        assert.deepEqual(bridge.getCurrentHand(state, "N"), ["H5"]);
+    });
+
+    it("returns empty hand when all cards played", function () {
+        var state = {
+            dealer: "W",
+            deal: {
+                n: ["H5"]
+            },
+            cards: ["H5"]
+        };
+
+        assert.deepEqual(bridge.getCurrentHand(state, "N"), []);
+    });
+
+});
+
+describe("getCurrentPlayer", function () {
+
+    it("returns dealer at the beginning of auction", function () {
+        var state = {
+            dealer: "N",
+            bids: [],
+            cards: []
+        };
+
+        assert.equal(bridge.getCurrentPlayer(state), "N");
+    });
+
+    it("returns first lead at the beginning of play", function () {
+        var state = {
+            dealer: "N",
+            bids: ["1H", "PASS", "PASS", "PASS"],
+            cards: []
+        };
+
+        assert.equal(bridge.getCurrentPlayer(state), "E");
+    });
+
+    it("returns declarer when dummy", function () {
+        var state = {
+            dealer: "N",
+            bids: ["1H", "PASS", "PASS", "PASS"],
+            cards: ["H5"]
+        };
+
+        assert.equal(bridge.getCurrentPlayer(state), "N");
+    });
+
+});
