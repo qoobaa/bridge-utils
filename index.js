@@ -119,6 +119,12 @@ var getDeclarer = function (state) {
     }
 };
 
+var getDummy = function (state) {
+    var declarer = getDeclarer(state);
+
+    return DIRECTIONS[(DIRECTIONS.indexOf(declarer) + 2) % 4];
+};
+
 // private
 
 var getFirstLead = function (state) {
@@ -165,5 +171,6 @@ module.exports = {
     isBidAllowed: isBidAllowed,
     isCardAllowed: isCardAllowed,
     getCurrentDirection: getCurrentDirection,
-    getTrickWinner: getTrickWinner
+    getTrickWinner: getTrickWinner,
+    getDummy: getDummy
 };

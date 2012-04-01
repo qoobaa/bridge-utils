@@ -605,3 +605,25 @@ describe("isCardAllowed", function () {
     });
 
 });
+
+describe("getDummy", function () {
+
+    it("returns S for declarer N", function () {
+        var state = {
+            dealer: "N",
+            bids: ["1C", "PASS", "PASS", "PASS"]
+        };
+
+        assert.equal(bridge.getDummy(state), "S");
+    });
+
+    it("returns E for declarer W", function () {
+        var state = {
+            dealer: "W",
+            bids: ["1C", "PASS", "PASS", "PASS"]
+        };
+
+        assert.equal(bridge.getDummy(state), "E");
+    });
+
+});
