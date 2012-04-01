@@ -14,7 +14,23 @@
 // public
 
 var isBidAllowed = function (state, bid) {
+    if (getCurrentPhase(state) !== "auction") {
+        return false;
+    }
 
+    var contract = getContract(state),
+        contractWithoutModifier = contract && contract.replace(/X/g, ""),
+        modifier = contract && contract.replace(/[^X]/g, "");
+
+    if (isContract(bid)) {
+        return CONTRACTS.indexOf(bid) > CONTRACTS.indexOf(contractWithoutModifier);
+    } else if (bid === "X") {
+        return modifier === "" && state.bids.indexOf(contractWithoutModifier) % 2 !== state.bids.length % 2;
+    } else if (bid === "XX") {
+        return modifier === "X" && state.bids.indexOf(contractWithoutModifier) % 2 === state.bids.length % 2;
+    } else {
+        return bid === "PASS";
+    };
 };
 
 var isCardAllowed = function (state, card) {
@@ -22,11 +38,43 @@ var isCardAllowed = function (state, card) {
 };
 
 var getCurrentDirection = function (state) {
+    switch (getCurrentPhase(state)) {
+    case "play":
+        var contract = getContract(state),
+            trump = contract[1],
+            currentTrickNumber = Math.floor(state.cards.length / 4),
+            currentTrick = state.cards.slice(currentTrick * 4, currentTrick * 4 + 4);
 
+
+
+        return undefined;
+    case "auction":
+        return DIRECTIONS[(state.bids.length + DIRECTIONS.indexOf(state.dealer)) % 4];
+    default:
+        return undefined;
+    }
+};
+
+var getTrickWinner = function (state, number) {
+    var contract = getContract(state),
+        trick = state.cards.slice(number * 4, number * 4 + 4);
+
+    var trumps = trick.filter(function (card) {
+        return card[0] === contract[1];
+    }).sort(compareCards);
+
+    var cards = trick.filter(function (card) {
+        return card[0] === trick[0][0];
+    }).sort(compareCards);
+
+    var card = trumps[trumps.length - 1] || cards[cards.length - 1],
+        previousWinner = number ? getTrickWinner(state, number - 1) : getFirstLead(state);
+
+    return card && DIRECTIONS[(DIRECTIONS.indexOf(previousWinner) + trick.indexOf(card)) % 4];
 };
 
 var getCurrentPhase = function (state) {
-    if (state.cards.length === 52) {
+    if (state.cards.length === 52 || (state.bids.length === 4 && state.bids.every(isPass))) {
         return "completed";
     } else if (state.bids.length > 3 && state.bids.slice(-3).every(isPass)) {
         return "play";
@@ -49,17 +97,23 @@ var getDeclarer = function (state) {
 
     if (contract) {
         var side = state.bids.indexOf(contract) % 2,
-            firstContract = state.bids.filter(function (bid, i) {
+            first = state.bids.filter(function (bid, i) {
                 return bid[1] === contract[1] && i % 2 === side;
             })[0];
 
-        return DIRECTIONS[(state.bids.indexOf(firstContract) + DIRECTIONS.indexOf(state.dealer)) % 4];
+        return DIRECTIONS[(state.bids.indexOf(first) + DIRECTIONS.indexOf(state.dealer)) % 4];
     } else {
         return undefined;
     }
 };
 
 // private
+
+var getFirstLead = function (state) {
+    var declarer = getDeclarer(state);
+
+    return DIRECTIONS[(DIRECTIONS.indexOf(declarer) + 1) % 4];
+};
 
 var isPass = function (bid) {
     return bid === "PASS";
@@ -77,18 +131,30 @@ var isContract = function (bid) {
     return CONTRACTS.indexOf(bid) !== -1;
 };
 
-var DIRECTIONS = ["N", "E", "S", "W"];
+var isModifier = function (bid) {
+    return bid === "X" || bid === "XX";
+};
 
 // var compareContracts = function (a, b) {
 //     return CONTRACTS.indexOf(a) - CONTRACTS.indexOf(b);
 // };
 
-var isModifier = function (bid) {
-    return bid === "X" || bid === "XX";
+var DIRECTIONS = ["N", "E", "S", "W"];
+
+var CARDS = ["C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "CT", "CJ", "CQ", "CK", "CA",
+             "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "DT", "DJ", "DQ", "DK", "DA",
+             "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "HT", "HJ", "HQ", "HK", "HA",
+             "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ", "SK", "SA"];
+
+var compareCards = function (a, b) {
+    return CARDS.indexOf(a) - CARDS.indexOf(b);
 };
 
 module.exports = {
     getContract: getContract,
     getCurrentPhase: getCurrentPhase,
-    getDeclarer: getDeclarer
+    getDeclarer: getDeclarer,
+    isBidAllowed: isBidAllowed,
+    getCurrentDirection: getCurrentDirection,
+    getTrickWinner: getTrickWinner
 };
