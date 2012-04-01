@@ -46,7 +46,7 @@ var isCardAllowed = function (state, card) {
             return lead && card[0] === lead[0];
         }).length > 0;
 
-    return hasCard && (!hasLeadSuit || card[0] === lead[0]);
+    return hasCard && state.cards.indexOf(card) === -1 && (!hasLeadSuit || card[0] === lead[0]);
 };
 
 var getCurrentDirection = function (state) {

@@ -591,4 +591,17 @@ describe("isCardAllowed", function () {
         assert.equal(bridge.isCardAllowed(state, "H5"), true);
     });
 
+    it("returns false if player has card but already exists", function () {
+        var state = {
+            dealer: "N",
+            deal: {
+                s: ["C8", "H5"]
+            },
+            cards: ["C2", "C5", "H5", "SA"],
+            bids: ["1C", "PASS", "PASS", "PASS"]
+        };
+
+        assert.equal(bridge.isCardAllowed(state, "H5"), false);
+    });
+
 });
