@@ -390,6 +390,16 @@ describe("getTrickWinner", function () {
         assert.equal(bridge.getTrickWinner(state, 1), "S");
     });
 
+    it("returns undefined for an empty trick", function () {
+        var state = {
+            bids: ["1C", "PASS", "PASS", "PASS"],
+            dealer: "E",
+            cards: ["S2",  "C5",  "S3", ("CA")]
+        };
+
+        assert.equal(bridge.getTrickWinner(state, 3), undefined);
+    });
+
     it("returns correct directions for a full game", function () {
         var state = {
             bids: ["1NT", "PASS", "PASS", "PASS"],
@@ -423,4 +433,162 @@ describe("getTrickWinner", function () {
         assert.equal(bridge.getTrickWinner(state, 11), "S");
         assert.equal(bridge.getTrickWinner(state, 12), "E");
     });
+});
+
+describe("getCurrentDirection", function () {
+
+    it("returns dealer when no bids", function () {
+        var state = {
+            dealer: "N",
+            cards: [],
+            bids: []
+        };
+
+        assert.equal(bridge.getCurrentDirection(state), "N");
+    });
+
+    it("returns correct direction during auction", function () {
+        var state = {
+            dealer: "W",
+            cards: [],
+            bids: ["1C", "PASS"]
+        };
+
+        assert.equal(bridge.getCurrentDirection(state), "E");
+    });
+
+    it("returns first lead when no cards", function () {
+        var state = {
+            dealer: "W",
+            cards: [],
+            bids: ["1C", "PASS", "PASS", "PASS"]
+        };
+
+        assert.equal(bridge.getCurrentDirection(state), "N");
+    });
+
+    it("returns correct player during play", function () {
+        var state = {
+            dealer: "W",
+            cards: ["H2"],
+            bids: ["1C", "PASS", "PASS", "PASS"]
+        };
+
+        assert.equal(bridge.getCurrentDirection(state), "E");
+    });
+
+    it("returns correct player during play on the beginning of second trick", function () {
+        var state = {
+            dealer: "W",
+            cards: ["H2", "H5", "HT", "H3"],
+            bids: ["1C", "PASS", "PASS", "PASS"]
+        };
+
+        assert.equal(bridge.getCurrentDirection(state), "S");
+    });
+
+    it("returns undefined when game is completed", function () {
+        var state = {
+            dealer: "W",
+            bids: ["1C", "PASS", "PASS", "PASS"],
+            cards: [ "C2",   "C3",  "C4", ("C5"), //  0
+                     "C6",   "C7",  "C8", ("C9"), //  1
+                     "CT",   "CJ",  "CQ", ("CK"), //  2
+                    ("CA"),  "D2",  "D3",  "D4",  //  3
+                     "D5",   "D6",  "D7", ("D8"), //  4
+                     "D9",   "DT",  "DJ", ("DQ"), //  5
+                     "DK",  ("DA"), "H2",  "H3",  //  6
+                     "H4",   "H5",  "H6", ("H7"), //  7
+                     "H8",   "H9",  "HT", ("HJ"), //  8
+                     "HQ",   "HK", ("HA"), "S2",  //  9
+                     "S3",   "S4",  "S5", ("S6"), // 10
+                     "S7",   "S8",  "S9", ("ST"), // 11
+                     "SJ",   "SQ",  "SK", ("SA")] // 12
+        };
+
+        assert.equal(bridge.getCurrentDirection(state), undefined);
+    });
+
+});
+
+describe("isCardAllowed", function () {
+
+    it("returns true if no cards played and player has card", function () {
+        var state = {
+            dealer: "N",
+            deal: {
+                e: ["H5"]
+            },
+            cards: [],
+            bids: ["1C", "PASS", "PASS", "PASS"]
+        };
+
+        assert.equal(bridge.isCardAllowed(state, "H5"), true);
+    });
+
+    it("returns false if no cards played and player does not have card", function () {
+        var state = {
+            dealer: "N",
+            deal: {
+                e: []
+            },
+            cards: [],
+            bids: ["1C", "PASS", "PASS", "PASS"]
+        };
+
+        assert.equal(bridge.isCardAllowed(state, "H5"), false);
+    });
+
+    it("returns true if player has card and card is in lead suit", function () {
+        var state = {
+            dealer: "N",
+            deal: {
+                s: ["C5"]
+            },
+            cards: ["C2"],
+            bids: ["1C", "PASS", "PASS", "PASS"]
+        };
+
+        assert.equal(bridge.isCardAllowed(state, "C5"), true);
+    });
+
+    it("returns true if player has card and card is not in lead suit, but player has no lead suit cards", function () {
+        var state = {
+            dealer: "N",
+            deal: {
+                s: ["H5"]
+            },
+            cards: ["C2"],
+            bids: ["1C", "PASS", "PASS", "PASS"]
+        };
+
+        assert.equal(bridge.isCardAllowed(state, "H5"), true);
+    });
+
+    it("returns false if player has card and card is not in lead suit, but player has lead suit cards", function () {
+        var state = {
+            dealer: "N",
+            deal: {
+                s: ["C8", "H5"]
+            },
+            cards: ["C2"],
+            bids: ["1C", "PASS", "PASS", "PASS"]
+        };
+
+        assert.equal(bridge.isCardAllowed(state, "H5"), false);
+    });
+
+    it("returns true if player has card and no lead given", function () {
+        var state = {
+            dealer: "N",
+            deal: {
+                s: ["C8", "H5"]
+            },
+            cards: ["C2", "C5", "D2", "SA"],
+            bids: ["1C", "PASS", "PASS", "PASS"]
+        };
+
+        assert.equal(bridge.isCardAllowed(state, "H5"), true);
+    });
+
 });

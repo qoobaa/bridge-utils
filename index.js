@@ -34,20 +34,28 @@ var isBidAllowed = function (state, bid) {
 };
 
 var isCardAllowed = function (state, card) {
+    if (getCurrentPhase(state) !== "play") {
+        return false;
+    }
 
+    var currentDirection = getCurrentDirection(state),
+        lead = state.cards[Math.floor(state.cards.length / 4) * 4],
+        hand = state.deal[currentDirection.toLowerCase()],
+        hasCard = hand.indexOf(card) !== -1,
+        hasLeadSuit = hand.filter(function (card) {
+            return lead && card[0] === lead[0];
+        }).length > 0;
+
+    return hasCard && (!hasLeadSuit || card[0] === lead[0]);
 };
 
 var getCurrentDirection = function (state) {
     switch (getCurrentPhase(state)) {
     case "play":
-        var contract = getContract(state),
-            trump = contract[1],
-            currentTrickNumber = Math.floor(state.cards.length / 4),
-            currentTrick = state.cards.slice(currentTrick * 4, currentTrick * 4 + 4);
+        var currentTrickNumber = Math.floor(state.cards.length / 4),
+            previousTrickWinner = getTrickWinner(state, currentTrickNumber - 1);
 
-
-
-        return undefined;
+        return DIRECTIONS[(state.cards.length % 4 + DIRECTIONS.indexOf(previousTrickWinner)) % 4];
     case "auction":
         return DIRECTIONS[(state.bids.length + DIRECTIONS.indexOf(state.dealer)) % 4];
     default:
@@ -56,21 +64,25 @@ var getCurrentDirection = function (state) {
 };
 
 var getTrickWinner = function (state, number) {
-    var contract = getContract(state),
-        trick = state.cards.slice(number * 4, number * 4 + 4);
+    if (number >= 0) {
+        var contract = getContract(state),
+            trick = state.cards.slice(number * 4, number * 4 + 4);
 
-    var trumps = trick.filter(function (card) {
-        return card[0] === contract[1];
-    }).sort(compareCards);
+        var trumps = trick.filter(function (card) {
+            return card[0] === contract[1];
+        }).sort(compareCards);
 
-    var cards = trick.filter(function (card) {
-        return card[0] === trick[0][0];
-    }).sort(compareCards);
+        var cards = trick.filter(function (card) {
+            return card[0] === trick[0][0];
+        }).sort(compareCards);
 
-    var card = trumps[trumps.length - 1] || cards[cards.length - 1],
-        previousWinner = number ? getTrickWinner(state, number - 1) : getFirstLead(state);
+        var card = trumps[trumps.length - 1] || cards[cards.length - 1],
+            previousWinner = getTrickWinner(state, number - 1);
 
-    return card && DIRECTIONS[(DIRECTIONS.indexOf(previousWinner) + trick.indexOf(card)) % 4];
+        return card && DIRECTIONS[(DIRECTIONS.indexOf(previousWinner) + trick.indexOf(card)) % 4];
+    } else {
+        return getFirstLead(state);
+    }
 };
 
 var getCurrentPhase = function (state) {
@@ -135,10 +147,6 @@ var isModifier = function (bid) {
     return bid === "X" || bid === "XX";
 };
 
-// var compareContracts = function (a, b) {
-//     return CONTRACTS.indexOf(a) - CONTRACTS.indexOf(b);
-// };
-
 var DIRECTIONS = ["N", "E", "S", "W"];
 
 var CARDS = ["C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "CT", "CJ", "CQ", "CK", "CA",
@@ -155,6 +163,7 @@ module.exports = {
     getCurrentPhase: getCurrentPhase,
     getDeclarer: getDeclarer,
     isBidAllowed: isBidAllowed,
+    isCardAllowed: isCardAllowed,
     getCurrentDirection: getCurrentDirection,
     getTrickWinner: getTrickWinner
 };
