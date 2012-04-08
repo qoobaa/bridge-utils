@@ -1,11 +1,8 @@
 {
     "author": "Jakub Kuźma <kuba@jah.pl>",
-    "name": "bridge",
-    "description": "Bridge utilities",
+    "name": "bridge-utils",
+    "description": "Bridge utils",
     "version": "0.0.0",
-    "repository": {
-        "url": ""
-    },
     "dependencies": {},
     "devDependencies": {
         "mocha": ">= 1.0.0"
@@ -13,7 +10,5 @@
     "scripts": {
         "test": "mocha test"
     },
-    "engines": {
-        "node": "*"
-    }
+    "main": "./index.js"
 }
