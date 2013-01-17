@@ -127,11 +127,19 @@ var getDummy = function (state) {
     return incrementDirection(declarer, 2);
 };
 
-var getCurrentHand = function (state, direction) {
-    // TODO: sort by colour (take a trump argument)
-    return state.deal[direction.toLowerCase()].filter(function (card) {
-        return state.cards.indexOf(card) === -1;
+// TODO: sort by colour (take a trump argument)
+var getCurrentHands = function (state, trump) {
+    var result = {};
+
+    Object.keys(state.deal).forEach(function (direction) {
+        var suitsOrder = getSuitsOrder(state.deal[direction.toLowerCase()], trump);
+
+        result[direction.toLowerCase()] = state.deal[direction.toLowerCase()].filter(function (card) {
+            return state.cards.indexOf(card) === -1;
+        }).sort(compareCards.bind(this, suitsOrder)).reverse();
     });
+
+    return result;
 };
 
 var getCurrentPlayer = function (state) {
@@ -142,6 +150,70 @@ var getCurrentPlayer = function (state) {
 };
 
 // private
+
+var getSuitsOrder = function (cards, trump) {
+    var suits = getSuits(cards);
+
+    switch (trump) {
+    case "C":
+        if (suits.h.length >= suits.d.length) {
+            return ["D", "S", "H", "C"];
+        } else {
+            return ["H", "S", "D", "C"];
+        }
+    case "D":
+        if (suits.s.length >= suits.c.length) {
+            return ["C", "H", "S", "D"];
+        } else {
+            return ["S", "H", "C", "D"];
+        }
+    case "H":
+        if (suits.s.length >= suits.c.length) {
+            return ["C", "D", "S", "H"];
+        } else {
+            return ["S", "D", "C", "H"];
+        }
+    case "S":
+        if (suits.h.length >= suits.d.length) {
+            return ["D", "C", "H", "S"];
+        } else {
+            return ["H", "C", "D", "S"];
+        }
+    default:
+        var result = ["C", "D", "H", "S"].sort(function (a, b) {
+            return suits[a.toLowerCase()].length - suits[b.toLowerCase()].length;
+        });
+
+        if (isSameColor(result[2], result[3])) {
+            result.unshift(result.splice(2, 1)[0]);
+        }
+
+        if (isSameColor(result[1], result[2])) {
+            result.unshift(result.splice(1, 1)[0]);
+        }
+
+        return result;
+    }
+};
+
+var isSameColor = function (a, b) {
+    return a === "C" && b === "S"
+        || a === "S" && b === "C"
+        || a === "D" && b === "H"
+        || a === "H" && b === "D";
+};
+
+var getSuits = function (cards) {
+    var result = {};
+
+    ["C", "D", "H", "S"].forEach(function (suit) {
+        result[suit.toLowerCase()] = cards.filter(function (card) {
+            return card[0] === suit;
+        });
+    });
+
+    return result;
+};
 
 var incrementDirection = function (direction, number) {
     return DIRECTIONS[(DIRECTIONS.indexOf(direction) + number) % 4];
@@ -180,8 +252,14 @@ var CARDS = ["C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "CT", "CJ", "CQ", "
              "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "HT", "HJ", "HQ", "HK", "HA",
              "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "ST", "SJ", "SQ", "SK", "SA"];
 
-var compareCards = function (a, b) {
-    return CARDS.indexOf(a) - CARDS.indexOf(b);
+var compareCards = function (suitsOrder, a, b) {
+    if (b === undefined) {
+        b = a;
+        a = suitsOrder;
+        suitsOrder = [];
+    }
+
+    return (CARDS.indexOf(a) + suitsOrder.indexOf(a[0]) * 100) - (CARDS.indexOf(b) + suitsOrder.indexOf(b[0]) * 100);
 };
 
 module.exports = {
@@ -193,6 +271,6 @@ module.exports = {
     getCurrentDirection: getCurrentDirection,
     getTrickWinner: getTrickWinner,
     getDummy: getDummy,
-    getCurrentHand: getCurrentHand,
+    getCurrentHands: getCurrentHands,
     getCurrentPlayer: getCurrentPlayer
 };

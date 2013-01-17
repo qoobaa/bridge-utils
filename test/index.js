@@ -628,30 +628,71 @@ describe("getDummy", function () {
 
 });
 
-describe("getCurrentHand", function () {
+describe("getCurrentHands", function () {
 
-    it("returns hand when no cards played", function () {
+    it("returns properly ordered hands when no cards played and no trump given", function () {
         var state = {
             dealer: "W",
             deal: {
-                n: ["H5"]
+                n: ["S2", "S3", "C2", "DJ", "H5", "CK", "H3", "CA", "DT"],
+                s: ["HA"]
             },
             cards: []
         };
 
-        assert.deepEqual(bridge.getCurrentHand(state, "N"), ["H5"]);
+        assert.deepEqual(bridge.getCurrentHands(state), { n: ["CA", "CK", "C2", "H5", "H3", "S3", "S2", "DJ", "DT"], s: ["HA"] });
     });
 
-    it("returns empty hand when all cards played", function () {
+    it("returns properly ordered hands when no cards played and trump given", function () {
         var state = {
             dealer: "W",
             deal: {
-                n: ["H5"]
+                n: ["S2", "S3", "C2", "DJ", "H5", "CK", "H3", "CA", "DT"],
+                s: ["HA"]
             },
-            cards: ["H5"]
+            cards: []
         };
 
-        assert.deepEqual(bridge.getCurrentHand(state, "N"), []);
+        assert.deepEqual(bridge.getCurrentHands(state, "D"), { n: ["DJ", "DT", "CA", "CK", "C2", "H5", "H3", "S3", "S2"], s: ["HA"] });
+    });
+
+    it("returns properly ordered hands when no cards played and trump given and same lengths", function () {
+        var state = {
+            dealer: "W",
+            deal: {
+                n: ["S2", "S3", "C2", "DJ", "H5", "H3", "CA", "DT"],
+                s: ["HA"]
+            },
+            cards: []
+        };
+
+        assert.deepEqual(bridge.getCurrentHands(state, "D"), { n: ["DJ", "DT", "S3", "S2", "H5", "H3", "CA", "C2"], s: ["HA"] });
+    });
+
+    it("returns properly ordered hands when trump given and trumps played", function () {
+        var state = {
+            dealer: "W",
+            deal: {
+                n: ["S2", "S3", "C2", "DJ", "H5", "H3", "CA", "DT"],
+                s: ["HA"]
+            },
+            cards: ["DJ", "DT"]
+        };
+
+        assert.deepEqual(bridge.getCurrentHands(state, "D"), { n: ["S3", "S2", "H5", "H3", "CA", "C2"], s: ["HA"] });
+    });
+
+    it("returns empty hands when all cards played", function () {
+        var state = {
+            dealer: "W",
+            deal: {
+                n: ["H5"],
+                s: ["HA"]
+            },
+            cards: ["H5", "HA"]
+        };
+
+        assert.deepEqual(bridge.getCurrentHands(state), { n: [], s: [] });
     });
 
 });
