@@ -127,7 +127,6 @@ var getDummy = function (state) {
     return incrementDirection(declarer, 2);
 };
 
-// TODO: sort by colour (take a trump argument)
 var getCurrentHands = function (state, trump) {
     var result = {};
 
